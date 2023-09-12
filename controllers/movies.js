@@ -13,7 +13,7 @@ module.exports.createMovie = (req, res, next) => {
 };
 
 module.exports.getMovies = (req, res, next) => {
-  Movie.find({})
+  Movie.find({}).sort({ createAt: '-1' })
     .then((movies) => res.send(movies))
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
