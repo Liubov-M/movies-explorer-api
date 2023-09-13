@@ -14,8 +14,6 @@ const app = express();
 
 app.use(cors({ credentials: true, origin: true }));
 
-app.use(limiter);
-
 app.use(helmet());
 
 app.use(express.json());
@@ -23,6 +21,8 @@ app.use(express.json());
 mongoose.connect(DB_URL);
 
 app.use(requestLogger);
+
+app.use(limiter);
 
 app.use('/', require('./routes/index'));
 

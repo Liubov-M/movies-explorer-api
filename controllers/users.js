@@ -44,10 +44,12 @@ module.exports.updateUser = (req, res, next) => {
   const { name, email } = req.body;
 
   User.findByIdAndUpdate(req.user._id, { name, email }, { new: 'true', runValidators: true })
-    .orFail(() => new NotFoundError('Пользователь по указанному id не найден'))
+    .orFail(() => new NotFoundError('Ресурс не найден'))
     .then((user) => res.send(user))
     .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
+      if (err.code === 11000) {
+        next(new ConflictError('Пользователь с таким email уже существует'));
+      } else if (err instanceof mongoose.Error.ValidationError) {
         next(new BadRequestError(err.message));
       } else {
         next(err);

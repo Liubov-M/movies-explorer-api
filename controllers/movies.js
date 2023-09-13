@@ -9,12 +9,6 @@ module.exports.createMovie = (req, res, next) => {
     .then((movie) => {
       res.send(movie);
     })
-    .catch((err) => next(err));
-};
-
-module.exports.getMovies = (req, res, next) => {
-  Movie.find({}).sort({ createAt: '-1' })
-    .then((movies) => res.send(movies))
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
         next(new BadRequestError(err.message));
@@ -23,19 +17,26 @@ module.exports.getMovies = (req, res, next) => {
       }
     });
 };
+
+module.exports.getMovies = (req, res, next) => {
+  Movie.find({ owner: req.user._id }).sort({ createAt: '-1' })
+    .then((movies) => res.send(movies))
+    .catch((err) => next(err));
+};
+
 module.exports.deleteMovie = (req, res, next) => {
   Movie.findById(req.params.movieId)
     .orFail()
     .then((movie) => {
       if (!movie.owner.equals(req.user._id)) {
-        throw new ForbiddenError('Фильм, добавленный не вами, нельзя удалить');
+        throw new ForbiddenError('Фильмы других пользователей нельзя удалить');
       }
       Movie.deleteOne(movie)
         .orFail()
         .then(() => res.send({ message: 'Фильм удален' }))
         .catch((err) => {
           if (err instanceof mongoose.Error.DocumentNotFoundError) {
-            next(new NotFoundError('Фильм с указанным id не найден'));
+            next(new NotFoundError('Ресурс не найден'));
           } else {
             next(err);
           }
@@ -43,9 +44,9 @@ module.exports.deleteMovie = (req, res, next) => {
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        next(new NotFoundError('Фильм по указанному id не найден'));
+        next(new NotFoundError('Ресурс не найден'));
       } else if (err instanceof mongoose.Error.CastError) {
-        next(new BadRequestError('Указан некорректный id фильма'));
+        next(new BadRequestError('Неверный запрос'));
       } else {
         next(err);
       }
